@@ -9,7 +9,7 @@
 import UIKit
 
 protocol LocationsViewControllerDelegate: class {
-    func userPinedLocation(lat:NSNumber, long:NSNumber)
+    func userPinedLocation(lat:NSNumber, long:NSNumber, name:String)
 }
 
 class LocationsViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UISearchBarDelegate {
@@ -56,6 +56,7 @@ class LocationsViewController: UIViewController, UITableViewDelegate, UITableVie
         
         let lat = venue.value(forKeyPath: "location.lat") as! NSNumber
         let lng = venue.value(forKeyPath: "location.lng") as! NSNumber
+        let name = venue["name"] as! String
         
         let latString = "\(lat)"
         let lngString = "\(lng)"
@@ -63,7 +64,7 @@ class LocationsViewController: UIViewController, UITableViewDelegate, UITableVie
         print(latString + " " + lngString)
         
         //Set the data back in PhotoMapVC
-        self.delegate?.userPinedLocation(lat: lat, long: lng)
+        self.delegate?.userPinedLocation(lat: lat, long: lng, name:name)
         self.navigationController?.popViewController(animated: true)
     }
     

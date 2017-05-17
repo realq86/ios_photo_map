@@ -9,7 +9,7 @@
 import UIKit
 import MapKit
 
-class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, LocationsViewControllerDelegate {
+class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, LocationsViewControllerDelegate, MKMapViewDelegate  {
     
     
     @IBOutlet weak var mapView: MKMapView!
@@ -26,6 +26,7 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
         let coordinateSpan = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
         let sfRegion = MKCoordinateRegion(center: sfGPS, span: coordinateSpan)
         
+        self.mapView.delegate = self
         self.mapView.setRegion(sfRegion, animated: false)
     }
     
@@ -39,11 +40,11 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
         let imagePickerVC = UIImagePickerController()
         imagePickerVC.delegate = self
         imagePickerVC.allowsEditing = true
+        
         if UIImagePickerController.isSourceTypeAvailable(.camera) {
             //Camera VC
             
             imagePickerVC.sourceType = .camera
-            
         }
         else {
             
@@ -67,10 +68,90 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
     }
     
     
-    func userPinedLocation(lat: NSNumber, long: NSNumber) {
+    func userPinedLocation(lat: NSNumber, long: NSNumber, name:String) {
         print("Got lat\(lat) and long \(long)")
+        
+        self.addAnnotationAt(lat: lat, long: long, name:name, image:self.editedImage)
     }
     
+    
+    
+    // MARK: - Map View Methods
+    func addAnnotationAt(lat:NSNumber, long:NSNumber, name:String, image:UIImage?) {
+    
+//  BEFORE BOUNS 1
+//        let mkAnnotation = MKPointAnnotation()
+        let mkAnnotation = CustomAnnotationView()
+        mkAnnotation.coordinate = CLLocationCoordinate2D(latitude: lat.doubleValue, longitude: long.doubleValue)
+        mkAnnotation.title = name
+        mkAnnotation.image = image!
+        
+        self.mapView.addAnnotation(mkAnnotation)
+    }
+    
+    func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+    
+        let customAnnotation = annotation as! CustomAnnotationView
+        let id = "AnnotationView"
+        var annotationView = self.mapView.dequeueReusableAnnotationView(withIdentifier: id)
+        
+        if annotationView == nil {
+
+//Bonus 3
+//            annotationView = MKPinAnnotationView(annotation: customAnnotation, reuseIdentifier: id)
+            annotationView = MKAnnotationView(annotation: customAnnotation, reuseIdentifier: id)
+            
+            annotationView?.canShowCallout = true
+            annotationView?.leftCalloutAccessoryView = UIImageView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
+            
+//Bonus 2
+//            var button = UIButton(frame: CGRect(x:0, y:0, width:50, height:50))
+            let button = UIButton(type: .detailDisclosure)
+            annotationView?.rightCalloutAccessoryView = button
+            
+        }
+        
+        let imageView = annotationView!.leftCalloutAccessoryView as! UIImageView
+
+//Before Bouns 1
+//        imageView.image = #imageLiteral(resourceName: "camera")
+        imageView.image = self.resizeImageForAnnotation(customAnnotation.image)
+        
+        //Bonus 3
+        annotationView?.image = imageView.image
+        
+        return annotationView
+    }
+    
+    func resizeImageForAnnotation(_ image:UIImage) -> UIImage?  {
+        
+        var resizeRenderImageView = UIImageView(frame: CGRect(x: 0, y: 0, width: 45, height: 45))
+        resizeRenderImageView.layer.borderColor = UIColor.white.cgColor
+        resizeRenderImageView.layer.borderWidth = 3.0
+        resizeRenderImageView.contentMode = .scaleAspectFill
+        resizeRenderImageView.image = image
+        
+        UIGraphicsBeginImageContext(resizeRenderImageView.frame.size)
+        resizeRenderImageView.layer.render(in: UIGraphicsGetCurrentContext()!)
+        var thumbnail = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+    
+        return thumbnail
+    }
+    
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        
+        self.performSegue(withIdentifier: "fullImageSegue", sender: self)
+    }
+    
+    public func mapViewDidFinishRenderingMap(_ mapView: MKMapView, fullyRendered: Bool) {
+    
+    
+    }
+    
+    func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        
+    }
     
     // MARK: - Navigation
     
@@ -82,6 +163,13 @@ class PhotoMapViewController: UIViewController, UIImagePickerControllerDelegate,
             
             let locationVC = segue.destination as! LocationsViewController
             locationVC.delegate = self
+        }
+        
+        if segue.identifier == "fullImageSegue" {
+        
+            let fullImageVC = segue.destination as! FullImageViewController
+            
+            fullImageVC.fullScreenImage = self.editedImage
         }
     }
     

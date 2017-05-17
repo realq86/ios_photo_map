@@ -10,10 +10,17 @@ import UIKit
 
 class FullImageViewController: UIViewController {
 
+    var fullScreenImage:UIImage?
+    
+    @IBOutlet weak var fullScreenImageView: UIImageView!
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // Do any additional setup after loading the view.
+        
+        self.fullScreenImageView.image = fullScreenImage
     }
 
     override func didReceiveMemoryWarning() {
